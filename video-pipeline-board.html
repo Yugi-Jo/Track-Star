@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Production Board</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+:root {
+  --bg: #1C1B1A;
+  --surface: #242220;
+  --surface-raised: #2C2A27;
+  --line: #3A3733;
+  --amber: #E8A33D;
+  --amber-dim: #6b5628;
+  --red: #C1443C;
+  --green: #7A9B7E;
+  --text: #EDE8E0;
+  --text-muted: #948E85;
+  --text-faint: #625D57;
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  padding: 32px 24px 80px;
+  min-height: 100vh;
+}
+
+.wrap { max-width: 880px; margin: 0 auto; }
+
+/* ---------- Header ---------- */
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  border-bottom: 2px solid var(--line);
+  padding-bottom: 20px;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+h1 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 28px;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+h1 span { color: var(--amber); }
+.subtitle {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-top: 4px;
+}
+
+/* ---------- New project ---------- */
+/* ---------- Sync row ---------- */
+.sync-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding: 10px 14px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.sync-label {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+.sync-row input {
+  flex: 1;
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 8px 10px;
+  border-radius: 5px;
+  outline: none;
+  min-width: 0;
+}
+.sync-row input:focus { border-color: var(--amber); }
+.sync-row .btn { padding: 0 14px; height: 34px; }
+.sync-status {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--green);
+  white-space: nowrap;
+}
+.sync-status.off { color: var(--text-faint); }
+
+.new-project {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 28px;
+}
+.new-project input {
+  flex: 1;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 14px;
+  padding: 12px 14px;
+  border-radius: 6px;
+  outline: none;
+}
+.new-project input:focus { border-color: var(--amber); }
+.new-project input::placeholder { color: var(--text-faint); }
+.btn {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: var(--amber);
+  color: #1C1B1A;
+  border: none;
+  padding: 0 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.btn:hover { opacity: 0.85; }
+.btn-ghost {
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--text-muted);
+}
+.btn-ghost:hover { border-color: var(--text-muted); color: var(--text); opacity: 1; }
+
+/* ---------- Empty state ---------- */
+.empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-faint);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+}
+
+/* ---------- Project card / slate ---------- */
+.project {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+
+.slate {
+  padding: 16px 18px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.slate-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.slate-title-row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
+}
+.slate-title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 18px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.slate-stage-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--amber);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+.slate-actions { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+.icon-btn {
+  background: none;
+  border: none;
+  color: var(--text-faint);
+  cursor: pointer;
+  font-size: 15px;
+  padding: 4px 6px;
+  line-height: 1;
+}
+.icon-btn:hover { color: var(--red); }
+.chevron {
+  color: var(--text-faint);
+  font-size: 12px;
+  transition: transform 0.2s;
+}
+.project.open .chevron { transform: rotate(90deg); }
+
+/* Sprocket track */
+.sprockets {
+  display: flex;
+  gap: 6px;
+}
+.sprocket {
+  flex: 1;
+  height: 8px;
+  border-radius: 2px;
+  background: var(--line);
+  position: relative;
+}
+.sprocket.done { background: var(--amber); }
+.sprocket.progress {
+  background: linear-gradient(90deg, var(--amber) 50%, var(--line) 50%);
+  background-size: 200% 100%;
+  animation: pulse 1.6s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { background-position: 0% 0; }
+  50% { background-position: 100% 0; }
+}
+
+/* ---------- Stage list ---------- */
+.stages {
+  display: none;
+  border-top: 1px solid var(--line);
+}
+.project.open .stages { display: block; }
+
+.stage {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--line);
+}
+.stage:last-child { border-bottom: none; }
+
+.stage-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.status-dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid var(--line);
+  background: transparent;
+  cursor: pointer;
+  flex-shrink: 0;
+  position: relative;
+  padding: 0;
+}
+.status-dot[data-status="progress"] { border-color: var(--amber); background: var(--amber-dim); }
+.status-dot[data-status="done"] { border-color: var(--amber); background: var(--amber); }
+.status-dot[data-status="done"]::after {
+  content: '✓';
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  color: #1C1B1A;
+  font-weight: 700;
+}
+.stage-name {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  flex: 1;
+}
+.stage-status-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  letter-spacing: 0.05em;
+}
+
+.stage-body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-left: 30px;
+}
+.stage-body.with-image { grid-template-columns: 1fr 1fr 100px; }
+
+.stage-body textarea, .stage-body input[type="text"] {
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 12.5px;
+  padding: 8px 10px;
+  border-radius: 5px;
+  outline: none;
+  resize: none;
+  width: 100%;
+}
+.stage-body textarea { grid-column: 1 / -1; min-height: 44px; font-family: var(--font-body); }
+.stage-body input:focus, .stage-body textarea:focus { border-color: var(--amber); }
+.stage-body input::placeholder, .stage-body textarea::placeholder { color: var(--text-faint); }
+
+.attach-col {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+}
+.thumb-preview {
+  width: 100px;
+  height: 56px;
+  border-radius: 4px;
+  object-fit: cover;
+  border: 1px solid var(--line);
+  background: var(--surface-raised);
+}
+.thumb-placeholder {
+  width: 100px;
+  height: 56px;
+  border-radius: 4px;
+  border: 1px dashed var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-faint);
+  text-align: center;
+}
+.file-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--amber);
+  cursor: pointer;
+  text-decoration: underline;
+}
+.file-note {
+  grid-column: 1 / -1;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--text-faint);
+}
+
+/* ---------- Cleanup queue ---------- */
+.cleanup-card {
+  background: var(--surface);
+  border: 1px solid var(--amber-dim);
+  border-radius: 10px;
+  padding: 14px 18px;
+  margin-bottom: 22px;
+}
+.cleanup-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--amber);
+  margin-bottom: 10px;
+}
+.cleanup-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 0;
+  border-top: 1px solid var(--line);
+}
+.cleanup-row:first-of-type { border-top: none; }
+.cleanup-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.cleanup-title {
+  font-size: 13.5px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cleanup-due {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--text-faint);
+}
+.cleanup-due.overdue { color: var(--red); }
+.cleanup-actions { display: flex; gap: 8px; flex-shrink: 0; }
+.link-chip {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--text-muted);
+  text-decoration: none;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 4px 8px;
+  white-space: nowrap;
+}
+.link-chip:hover { border-color: var(--amber); color: var(--amber); }
+.btn-clean {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  background: transparent;
+  border: 1px solid var(--amber-dim);
+  color: var(--amber);
+  padding: 5px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.btn-clean:hover { background: var(--amber); color: #1C1B1A; }
+
+footer {
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--text-faint);
+  margin-top: 30px;
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Production <span>Board</span></h1>
+      <div class="subtitle">idea &rarr; script &rarr; film &rarr; edit &rarr; package &rarr; publish</div>
+    </div>
+  </header>
+
+  <div class="sync-row">
+    <label class="sync-label">Drive Sync URL</label>
+    <input id="syncUrlInput" type="text" placeholder="Paste your Apps Script web app URL here...">
+    <button class="btn btn-ghost" onclick="saveSyncUrl()">Save</button>
+    <span id="syncStatus" class="sync-status"></span>
+  </div>
+
+  <div class="new-project">
+    <input id="newProjectInput" type="text" placeholder="New video title or working name..." maxlength="80">
+    <button class="btn" onclick="addProject()">Add project</button>
+  </div>
+
+  <div id="cleanupSection"></div>
+
+  <div id="projectList"></div>
+  <div id="emptyState" class="empty" style="display:none;">No projects yet — add one above to start the pipeline.</div>
+
+  <footer>saved locally to this board · attach big files by pasting a link, thumbnails can be uploaded directly</footer>
+</div>
+
+<script>
+const STAGES = [
+  { key: 'idea',    label: 'Idea',    placeholder: 'Concept, hook, angle...' },
+  { key: 'package', label: 'Package', placeholder: 'Title drafts, thumbnail concept...', hasImage: true },
+  { key: 'script',  label: 'Script',  placeholder: 'Outline or script notes...' },
+  { key: 'film',    label: 'Film',    placeholder: 'Shoot notes, gear, location...' },
+  { key: 'edit',    label: 'Edit',    placeholder: 'Edit notes, cut version...' },
+  { key: 'publish', label: 'Publish', placeholder: 'Publish date/time, live link...' },
+];
+
+const CLEANUP_DAYS = 7;
+
+let projects = [];
+let syncUrl = '';
+
+async function loadSyncUrl() {
+  try {
+    const rec = await window.storage.get('drive-sync-url', false);
+    syncUrl = rec ? rec.value : '';
+  } catch (e) { syncUrl = ''; }
+  document.getElementById('syncUrlInput').value = syncUrl;
+  updateSyncStatus();
+}
+
+function updateSyncStatus() {
+  const el = document.getElementById('syncStatus');
+  if (syncUrl) {
+    el.textContent = '● connected';
+    el.className = 'sync-status';
+  } else {
+    el.textContent = 'not connected — files stay local only';
+    el.className = 'sync-status off';
+  }
+}
+
+async function saveSyncUrl() {
+  syncUrl = document.getElementById('syncUrlInput').value.trim();
+  try {
+    await window.storage.set('drive-sync-url', syncUrl, false);
+  } catch (e) { console.error('sync url save failed', e); }
+  updateSyncStatus();
+}
+
+function blankStages() {
+  const s = {};
+  STAGES.forEach(st => { s[st.key] = { status: 'todo', notes: '', link: '', fileName: '', fileSize: '', image: '', driveFileUrl: '', driveFileName: '', uploadStatus: 'idle' }; });
+  return s;
+}
+
+function uid() { return 'p' + Date.now() + Math.random().toString(36).slice(2, 7); }
+
+async function loadProjects() {
+  try {
+    const idx = await window.storage.get('project-index', false);
+    const ids = idx ? JSON.parse(idx.value) : [];
+    const loaded = [];
+    for (const id of ids) {
+      try {
+        const rec = await window.storage.get('project:' + id, false);
+        if (rec) loaded.push(JSON.parse(rec.value));
+      } catch (e) { /* skip missing */ }
+    }
+    projects = loaded;
+  } catch (e) {
+    projects = [];
+  }
+  render();
+}
+
+async function saveIndex() {
+  try {
+    await window.storage.set('project-index', JSON.stringify(projects.map(p => p.id)), false);
+  } catch (e) { console.error('index save failed', e); }
+}
+
+async function saveProject(p) {
+  try {
+    await window.storage.set('project:' + p.id, JSON.stringify(p), false);
+  } catch (e) { console.error('project save failed', e); }
+}
+
+async function deleteProjectStorage(id) {
+  try { await window.storage.delete('project:' + id, false); } catch (e) {}
+}
+
+function addProject() {
+  const input = document.getElementById('newProjectInput');
+  const title = input.value.trim();
+  if (!title) return;
+  const p = { id: uid(), title, open: true, stages: blankStages(), publishedAt: null, cleanupDone: false };
+  projects.unshift(p);
+  input.value = '';
+  saveProject(p);
+  saveIndex();
+  render();
+}
+
+function deleteProject(id, ev) {
+  ev.stopPropagation();
+  if (!confirm('Delete this project? This cannot be undone.')) return;
+  projects = projects.filter(p => p.id !== id);
+  deleteProjectStorage(id);
+  saveIndex();
+  render();
+}
+
+function toggleOpen(id) {
+  const p = projects.find(p => p.id === id);
+  p.open = !p.open;
+  render();
+}
+
+function cycleStatus(pid, skey, ev) {
+  ev.stopPropagation();
+  const p = projects.find(p => p.id === pid);
+  const st = p.stages[skey];
+  st.status = st.status === 'todo' ? 'progress' : st.status === 'progress' ? 'done' : 'todo';
+  if (skey === 'publish') {
+    if (st.status === 'done') {
+      p.publishedAt = Date.now();
+      p.cleanupDone = false;
+    } else {
+      p.publishedAt = null;
+    }
+  }
+  saveProject(p);
+  render();
+}
+
+function markCleaned(pid, ev) {
+  ev.stopPropagation();
+  const p = projects.find(p => p.id === pid);
+  p.cleanupDone = true;
+  saveProject(p);
+  render();
+}
+
+function updateField(pid, skey, field, value) {
+  const p = projects.find(p => p.id === pid);
+  p.stages[skey][field] = value;
+  saveProject(p);
+}
+
+const MAX_UPLOAD = 40 * 1024 * 1024; // ~40MB practical ceiling for Apps Script web app requests
+
+function handleFile(pid, skey, fileInput, isImageStage) {
+  const file = fileInput.files[0];
+  if (!file) return;
+  const p = projects.find(p => p.id === pid);
+  const st = p.stages[skey];
+  const stageLabel = STAGES.find(s => s.key === skey).label;
+
+  if (!syncUrl) {
+    // No Drive sync configured — fall back to local-only handling
+    if (isImageStage && file.type.startsWith('image/') && file.size <= 3 * 1024 * 1024) {
+      const reader = new FileReader();
+      reader.onload = () => { st.image = reader.result; st.fileName = file.name; saveProject(p); render(); };
+      reader.readAsDataURL(file);
+    } else {
+      st.fileName = file.name;
+      st.fileSize = (file.size / (1024 * 1024)).toFixed(1) + ' MB';
+      saveProject(p); render();
+    }
+    return;
+  }
+
+  if (file.size > MAX_UPLOAD) {
+    st.uploadStatus = 'error';
+    st.fileName = file.name;
+    st.fileSize = (file.size / (1024 * 1024)).toFixed(1) + ' MB — too large to sync, add a Drive link manually';
+    saveProject(p); render();
+    return;
+  }
+
+  st.uploadStatus = 'uploading';
+  render();
+
+  const reader = new FileReader();
+  reader.onload = async () => {
+    const base64 = reader.result.split(',')[1];
+
+    // Show a local preview immediately for images, while the upload runs
+    if (isImageStage && file.type.startsWith('image/')) {
+      st.image = reader.result;
+    }
+
+    try {
+      const res = await fetch(syncUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          project: p.title,
+          stage: stageLabel,
+          fileName: file.name,
+          mimeType: file.type,
+          base64
+        })
+      });
+      const json = await res.json();
+      if (json.success) {
+        st.driveFileUrl = json.fileUrl;
+        st.driveFileName = json.fileName;
+        if (!st.link) st.link = json.folderUrl;
+        st.uploadStatus = 'done';
+        st.fileName = '';
+        st.fileSize = '';
+      } else {
+        st.uploadStatus = 'error';
+        st.fileName = 'Upload failed: ' + (json.error || 'unknown error');
+      }
+    } catch (err) {
+      st.uploadStatus = 'error';
+      st.fileName = 'Upload failed: could not reach Drive Sync URL';
+    }
+    saveProject(p);
+    render();
+  };
+  reader.readAsDataURL(file);
+}
+
+function progressCounts(p) {
+  let done = 0, inprog = -1;
+  STAGES.forEach((s, i) => {
+    const status = p.stages[s.key].status;
+    if (status === 'done') done++;
+    if (status === 'progress' && inprog === -1) inprog = i;
+  });
+  return { done, inprog };
+}
+
+function currentStageLabel(p) {
+  const active = STAGES.find(s => p.stages[s.key].status === 'progress');
+  if (active) return active.label + ' — in progress';
+  for (let i = STAGES.length - 1; i >= 0; i--) {
+    if (p.stages[STAGES[i].key].status === 'done') {
+      if (i === STAGES.length - 1) return 'Published';
+      return 'Next: ' + STAGES[i + 1].label;
+    }
+  }
+  return 'Not started';
+}
+
+function render() {
+  const list = document.getElementById('projectList');
+  const empty = document.getElementById('emptyState');
+  empty.style.display = projects.length ? 'none' : 'block';
+  list.innerHTML = projects.map(renderProject).join('');
+  renderCleanupQueue();
+}
+
+function renderCleanupQueue() {
+  const el = document.getElementById('cleanupSection');
+  const due = projects
+    .filter(p => p.stages.publish.status === 'done' && !p.cleanupDone && p.publishedAt)
+    .sort((a, b) => a.publishedAt - b.publishedAt);
+
+  if (!due.length) { el.innerHTML = ''; return; }
+
+  const rows = due.map(p => {
+    const dueDate = p.publishedAt + CLEANUP_DAYS * 24 * 60 * 60 * 1000;
+    const overdue = Date.now() > dueDate;
+    const dateStr = new Date(dueDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    const driveLinks = STAGES.filter(s => p.stages[s.key].link).map(s =>
+      `<a class="link-chip" href="${escapeHtml(p.stages[s.key].link)}" target="_blank" rel="noopener">${s.label}</a>`
+    ).join('');
+    return `
+    <div class="cleanup-row">
+      <div class="cleanup-info">
+        <span class="cleanup-title">${escapeHtml(p.title)}</span>
+        <span class="cleanup-due ${overdue ? 'overdue' : ''}">${overdue ? 'overdue since' : 'clear folders by'} ${dateStr}</span>
+      </div>
+      <div class="cleanup-actions">
+        ${driveLinks}
+        <button class="btn-clean" onclick="markCleaned('${p.id}', event)">Mark cleaned</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  el.innerHTML = `
+    <div class="cleanup-card">
+      <div class="cleanup-head">🧹 Drive cleanup — due ${CLEANUP_DAYS} days after publish</div>
+      ${rows}
+    </div>`;
+}
+
+function renderProject(p) {
+  const sprockets = STAGES.map(s => {
+    const status = p.stages[s.key].status;
+    const cls = status === 'done' ? 'done' : status === 'progress' ? 'progress' : '';
+    return `<div class="sprocket ${cls}" title="${s.label}"></div>`;
+  }).join('');
+
+  const stagesHtml = STAGES.map(s => renderStage(p, s)).join('');
+
+  return `
+  <div class="project ${p.open ? 'open' : ''}">
+    <div class="slate" onclick="toggleOpen('${p.id}')">
+      <div class="slate-top">
+        <div class="slate-title-row">
+          <span class="chevron">▶</span>
+          <span class="slate-title">${escapeHtml(p.title)}</span>
+        </div>
+        <div class="slate-actions">
+          <span class="slate-stage-label">${currentStageLabel(p)}</span>
+          <button class="icon-btn" title="Delete project" onclick="deleteProject('${p.id}', event)">✕</button>
+        </div>
+      </div>
+      <div class="sprockets">${sprockets}</div>
+    </div>
+    <div class="stages">${stagesHtml}</div>
+  </div>`;
+}
+
+function renderStage(p, s) {
+  const st = p.stages[s.key];
+  const statusLabel = st.status === 'done' ? 'Done' : st.status === 'progress' ? 'In progress' : 'To do';
+  const uploading = st.uploadStatus === 'uploading';
+
+  let attachHtml = '';
+  if (s.hasImage) {
+    const syncLabel = uploading ? 'Uploading...' : st.driveFileUrl ? '✓ synced' : '';
+    attachHtml = `
+      <div class="attach-col">
+        ${st.image ? `<img class="thumb-preview" src="${st.image}">` : `<div class="thumb-placeholder">no thumbnail</div>`}
+        ${syncLabel ? `<span class="sync-status" style="font-size:9px;">${syncLabel}</span>` : ''}
+        ${uploading ? '' : `<label class="file-label">${st.image ? 'Replace' : 'Upload'}
+          <input type="file" accept="image/*" style="display:none" onchange="handleFile('${p.id}','${s.key}', this, true)">
+        </label>`}
+      </div>`;
+  }
+
+  let fileNote = '';
+  if (!s.hasImage) {
+    const label = uploading ? 'Uploading to Drive...'
+      : st.driveFileUrl ? `<a href="${escapeHtml(st.driveFileUrl)}" target="_blank" rel="noopener" style="color:var(--amber);">📎 ${escapeHtml(st.driveFileName)}</a> — synced to Drive`
+      : st.fileName ? `⚠ ${escapeHtml(st.fileName)}${st.fileSize ? ' (' + st.fileSize + ')' : ''}`
+      : '';
+    fileNote = `
+      <div class="file-note">
+        ${label}
+        <label class="file-label" style="margin-left:${label ? '10px' : '0'}">${uploading ? '' : (st.driveFileUrl ? 'replace file' : 'attach file')}
+          ${uploading ? '' : `<input type="file" style="display:none" onchange="handleFile('${p.id}','${s.key}', this, false)">`}
+        </label>
+      </div>`;
+  }
+
+  return `
+  <div class="stage">
+    <div class="stage-head">
+      <button class="status-dot" data-status="${st.status}" onclick="cycleStatus('${p.id}','${s.key}', event)"></button>
+      <span class="stage-name">${s.label.toUpperCase()}</span>
+      <span class="stage-status-label">${statusLabel}</span>
+    </div>
+    <div class="stage-body ${s.hasImage ? 'with-image' : ''}" onclick="event.stopPropagation()">
+      <textarea placeholder="${s.placeholder}" oninput="updateField('${p.id}','${s.key}','notes', this.value)">${escapeHtml(st.notes)}</textarea>
+      <input type="text" placeholder="Drive folder link for ${s.label.toLowerCase()}..." value="${escapeHtml(st.link)}" oninput="updateField('${p.id}','${s.key}','link', this.value)">
+      ${attachHtml}
+      ${fileNote}
+    </div>
+  </div>`;
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return str.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+document.getElementById('newProjectInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') addProject();
+});
+
+loadProjects();
+loadSyncUrl();
+</script>
+</body>
+</html>
