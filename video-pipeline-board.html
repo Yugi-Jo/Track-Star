@@ -324,6 +324,27 @@ h1 span { color: var(--amber); }
 .stage-body input:focus, .stage-body textarea:focus { border-color: var(--amber); }
 .stage-body input::placeholder, .stage-body textarea::placeholder { color: var(--text-faint); }
 
+.link-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.link-row input { flex: 1; }
+.folder-open {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  color: var(--amber);
+  text-decoration: none;
+  font-size: 14px;
+}
+.folder-open:hover { border-color: var(--amber); background: var(--amber-dim); }
+
 .attach-col {
   display: flex;
   flex-direction: column;
@@ -448,7 +469,7 @@ footer {
   <header>
     <div>
       <h1>Production <span>Board</span></h1>
-      <div class="subtitle">idea &rarr; script &rarr; film &rarr; edit &rarr; package &rarr; publish</div>
+      <div class="subtitle">idea &rarr; title &rarr; thumbnail &rarr; script &rarr; film &rarr; edit &rarr; publish</div>
     </div>
   </header>
 
@@ -474,12 +495,13 @@ footer {
 
 <script>
 const STAGES = [
-  { key: 'idea',    label: 'Idea',    placeholder: 'Concept, hook, angle...' },
-  { key: 'package', label: 'Package', placeholder: 'Title drafts, thumbnail concept...', hasImage: true },
-  { key: 'script',  label: 'Script',  placeholder: 'Outline or script notes...' },
-  { key: 'film',    label: 'Film',    placeholder: 'Shoot notes, gear, location...' },
-  { key: 'edit',    label: 'Edit',    placeholder: 'Edit notes, cut version...' },
-  { key: 'publish', label: 'Publish', placeholder: 'Publish date/time, live link...' },
+  { key: 'idea',      label: 'Idea',      placeholder: 'Concept, hook, angle...', defaultLink: 'https://drive.google.com/drive/folders/1iT6Y3vNL7000iQBcybRSdumsW2x_F1P_?usp=drive_link' },
+  { key: 'title',     label: 'Title',     placeholder: 'Draft titles, hooks...', defaultLink: 'https://drive.google.com/drive/folders/1NjqOskAigEHNcgIXhU5RSMVxSxIwypX3?usp=drive_link' },
+  { key: 'thumbnail', label: 'Thumbnail', placeholder: 'Thumbnail concept...', hasImage: true, defaultLink: 'https://drive.google.com/drive/folders/10E5mENfTvux1ncRupO1S-vms2mIumQDs?usp=drive_link' },
+  { key: 'script',    label: 'Script',    placeholder: 'Outline or script notes...', defaultLink: 'https://drive.google.com/drive/folders/10OVzMszbp1ThAGTNBJEL3tQu6eYsJE46?usp=drive_link' },
+  { key: 'film',      label: 'Film',      placeholder: 'Shoot notes, gear, location...', defaultLink: 'https://drive.google.com/drive/folders/17xkL8pDhUccVL-avMoph-AhXWLDun8Jh?usp=drive_link' },
+  { key: 'edit',      label: 'Edit',      placeholder: 'Edit notes, cut version...', defaultLink: 'https://drive.google.com/drive/folders/16naS9imSn7d8yTji459fXkwNpVyMC_uL?usp=drive_link' },
+  { key: 'publish',   label: 'Publish',   placeholder: 'Publish date/time, live link...' },
 ];
 
 const CLEANUP_DAYS = 7;
@@ -517,7 +539,7 @@ async function saveSyncUrl() {
 
 function blankStages() {
   const s = {};
-  STAGES.forEach(st => { s[st.key] = { status: 'todo', notes: '', link: '', fileName: '', fileSize: '', image: '', driveFileUrl: '', driveFileName: '', uploadStatus: 'idle' }; });
+  STAGES.forEach(st => { s[st.key] = { status: 'todo', notes: '', link: st.defaultLink || '', fileName: '', fileSize: '', image: '', driveFileUrl: '', driveFileName: '', uploadStatus: 'idle' }; });
   return s;
 }
 
@@ -827,7 +849,10 @@ function renderStage(p, s) {
     </div>
     <div class="stage-body ${s.hasImage ? 'with-image' : ''}" onclick="event.stopPropagation()">
       <textarea placeholder="${s.placeholder}" oninput="updateField('${p.id}','${s.key}','notes', this.value)">${escapeHtml(st.notes)}</textarea>
-      <input type="text" placeholder="Drive folder link for ${s.label.toLowerCase()}..." value="${escapeHtml(st.link)}" oninput="updateField('${p.id}','${s.key}','link', this.value)">
+      <div class="link-row">
+        <input type="text" placeholder="Drive folder link for ${s.label.toLowerCase()}..." value="${escapeHtml(st.link)}" oninput="updateField('${p.id}','${s.key}','link', this.value)">
+        ${st.link ? `<a class="folder-open" href="${escapeHtml(st.link)}" target="_blank" rel="noopener" title="Open folder">↗</a>` : ''}
+      </div>
       ${attachHtml}
       ${fileNote}
     </div>
