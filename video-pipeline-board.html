@@ -385,6 +385,18 @@ h1 span { color: var(--amber); }
   font-size: 10.5px;
   color: var(--text-faint);
 }
+.sync-error {
+  grid-column: 1 / -1;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--red);
+  background: rgba(193, 68, 60, 0.1);
+  border: 1px solid var(--red);
+  border-radius: 5px;
+  padding: 8px 10px;
+  margin-top: 4px;
+  word-break: break-word;
+}
 
 /* ---------- Cleanup queue ---------- */
 .cleanup-card {
@@ -536,7 +548,7 @@ async function saveSyncUrl() {
 
 function blankStages() {
   const s = {};
-  STAGES.forEach(st => { s[st.key] = { status: 'todo', notes: '', link: st.defaultLink || '', fileName: '', fileSize: '', image: '', driveFileUrl: '', driveFileName: '', uploadStatus: 'idle' }; });
+  STAGES.forEach(st => { s[st.key] = { status: 'todo', notes: '', link: st.defaultLink || '', fileName: '', fileSize: '', image: '', driveFileUrl: '', driveFileName: '', uploadStatus: 'idle', syncError: '' }; });
   return s;
 }
 
@@ -560,6 +572,7 @@ async function loadProjects() {
       }
     }
     projects = loaded;
+    projects.forEach(p => { p.open = false; });
   } catch (e) {
     projects = [];
   }
@@ -668,11 +681,14 @@ async function syncTextStage(pid, skey) {
       st.driveFileName = json.fileName;
       if (!st.link && json.folderUrl) st.link = json.folderUrl;
       st.uploadStatus = 'done';
+      st.syncError = '';
     } else {
       st.uploadStatus = 'error';
+      st.syncError = json.error || 'Unknown error from Apps Script';
     }
   } catch (e) {
     st.uploadStatus = 'error';
+    st.syncError = 'Could not reach Drive Sync URL (' + e.message + ')';
   }
   saveProject(p);
   render();
@@ -744,13 +760,14 @@ function handleFile(pid, skey, fileInput, isImageStage) {
         st.uploadStatus = 'done';
         st.fileName = '';
         st.fileSize = '';
+        st.syncError = '';
       } else {
         st.uploadStatus = 'error';
-        st.fileName = 'Upload failed: ' + (json.error || 'unknown error');
+        st.syncError = json.error || 'Unknown error from Apps Script';
       }
     } catch (err) {
       st.uploadStatus = 'error';
-      st.fileName = 'Upload failed: could not reach Drive Sync URL';
+      st.syncError = 'Could not reach Drive Sync URL (' + err.message + ')';
     }
     saveProject(p);
     render();
@@ -899,6 +916,7 @@ function renderStage(p, s) {
       </div>
       ${attachHtml}
       ${fileNote}
+      ${st.syncError ? `<div class="sync-error">⚠ Drive sync failed: ${escapeHtml(st.syncError)}</div>` : ''}
     </div>
   </div>`;
 }
