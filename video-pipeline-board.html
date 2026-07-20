@@ -510,10 +510,7 @@ let projects = [];
 let syncUrl = '';
 
 async function loadSyncUrl() {
-  try {
-    const rec = await window.storage.get('drive-sync-url', false);
-    syncUrl = rec ? rec.value : '';
-  } catch (e) { syncUrl = ''; }
+  syncUrl = localStorage.getItem('pb_drive-sync-url') || '';
   document.getElementById('syncUrlInput').value = syncUrl;
   updateSyncStatus();
 }
@@ -532,7 +529,7 @@ function updateSyncStatus() {
 async function saveSyncUrl() {
   syncUrl = document.getElementById('syncUrlInput').value.trim();
   try {
-    await window.storage.set('drive-sync-url', syncUrl, false);
+    localStorage.setItem('pb_drive-sync-url', syncUrl);
   } catch (e) { console.error('sync url save failed', e); }
   updateSyncStatus();
 }
@@ -545,16 +542,22 @@ function blankStages() {
 
 function uid() { return 'p' + Date.now() + Math.random().toString(36).slice(2, 7); }
 
+function extractFolderId(url) {
+  if (!url) return null;
+  const match = url.match(/\/folders\/([a-zA-Z0-9_-]+)/);
+  return match ? match[1] : null;
+}
+
 async function loadProjects() {
   try {
-    const idx = await window.storage.get('project-index', false);
-    const ids = idx ? JSON.parse(idx.value) : [];
+    const idx = localStorage.getItem('pb_project-index');
+    const ids = idx ? JSON.parse(idx) : [];
     const loaded = [];
     for (const id of ids) {
-      try {
-        const rec = await window.storage.get('project:' + id, false);
-        if (rec) loaded.push(JSON.parse(rec.value));
-      } catch (e) { /* skip missing */ }
+      const raw = localStorage.getItem('pb_project:' + id);
+      if (raw) {
+        try { loaded.push(JSON.parse(raw)); } catch (e) { /* skip corrupt record */ }
+      }
     }
     projects = loaded;
   } catch (e) {
@@ -565,18 +568,18 @@ async function loadProjects() {
 
 async function saveIndex() {
   try {
-    await window.storage.set('project-index', JSON.stringify(projects.map(p => p.id)), false);
+    localStorage.setItem('pb_project-index', JSON.stringify(projects.map(p => p.id)));
   } catch (e) { console.error('index save failed', e); }
 }
 
 async function saveProject(p) {
   try {
-    await window.storage.set('project:' + p.id, JSON.stringify(p), false);
+    localStorage.setItem('pb_project:' + p.id, JSON.stringify(p));
   } catch (e) { console.error('project save failed', e); }
 }
 
 async function deleteProjectStorage(id) {
-  try { await window.storage.delete('project:' + id, false); } catch (e) {}
+  try { localStorage.removeItem('pb_project:' + id); } catch (e) {}
 }
 
 function addProject() {
@@ -631,10 +634,48 @@ function markCleaned(pid, ev) {
   render();
 }
 
+let debounceTimers = {};
+
 function updateField(pid, skey, field, value) {
   const p = projects.find(p => p.id === pid);
   p.stages[skey][field] = value;
   saveProject(p);
+  if (field === 'notes' && skey === 'title') {
+    const timerKey = pid + ':' + skey;
+    clearTimeout(debounceTimers[timerKey]);
+    debounceTimers[timerKey] = setTimeout(() => syncTextStage(pid, skey), 1200);
+  }
+}
+
+async function syncTextStage(pid, skey) {
+  if (!syncUrl) return;
+  const p = projects.find(p => p.id === pid);
+  if (!p) return;
+  const st = p.stages[skey];
+  if (!st.notes || !st.notes.trim()) return;
+  const stageLabel = STAGES.find(s => s.key === skey).label;
+  const folderId = extractFolderId(st.link);
+
+  try {
+    const res = await fetch(syncUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ mode: 'text', folderId, project: p.title, stage: stageLabel, text: st.notes })
+    });
+    const json = await res.json();
+    if (json.success) {
+      st.driveFileUrl = json.fileUrl;
+      st.driveFileName = json.fileName;
+      if (!st.link && json.folderUrl) st.link = json.folderUrl;
+      st.uploadStatus = 'done';
+    } else {
+      st.uploadStatus = 'error';
+    }
+  } catch (e) {
+    st.uploadStatus = 'error';
+  }
+  saveProject(p);
+  render();
 }
 
 const MAX_UPLOAD = 40 * 1024 * 1024; // ~40MB practical ceiling for Apps Script web app requests
@@ -681,10 +722,13 @@ function handleFile(pid, skey, fileInput, isImageStage) {
     }
 
     try {
+      const folderId = extractFolderId(st.link);
       const res = await fetch(syncUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({
+          mode: 'file',
+          folderId,
           project: p.title,
           stage: stageLabel,
           fileName: file.name,
