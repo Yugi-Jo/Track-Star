@@ -3,4 +3,4 @@ The Hub of Yugi Jo
 
 https://yugi-jo.github.io/Track-Star/video-pipeline-board.html
 
-https://script.google.com/macros/s/AKfycbyiOgbH7IcONOOItI-ht3-R6pisVuZo0-ZVqmXlfdlkfqtfXJe2pHCpyO0x3dlMa0HlYQ/exec
+https://script.google.com/macros/s/AKfycbyR-Zn6BjAj4atpH0sgTLa17H4Aee6FiGMKbgxRO0Bt7-F0tMbom9K2gxnEIqjO1eBwSQ/exec
