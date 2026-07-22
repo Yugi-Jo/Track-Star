@@ -502,7 +502,7 @@ footer {
   <div id="projectList"></div>
   <div id="emptyState" class="empty" style="display:none;">No projects yet — add one above to start the pipeline.</div>
 
-  <footer>saved locally to this board · attach big files by pasting a link, thumbnails can be uploaded directly</footer>
+  <footer>saved to this board · attach big files by pasting a link, thumbnails can be uploaded directly</footer>
 </div>
 
 <script>
@@ -521,8 +521,38 @@ const CLEANUP_DAYS = 7;
 let projects = [];
 let syncUrl = '';
 
+// ---------- Persistent storage helpers (window.storage, personal/non-shared) ----------
+
+async function storageGet(key) {
+  try {
+    const res = await window.storage.get(key, false);
+    return res ? res.value : null;
+  } catch (e) {
+    return null; // key doesn't exist or storage error
+  }
+}
+
+async function storageSet(key, value) {
+  try {
+    const res = await window.storage.set(key, value, false);
+    if (!res) console.error('Storage set returned null for key', key);
+    return res;
+  } catch (e) {
+    console.error('Storage set failed for key', key, e);
+    return null;
+  }
+}
+
+async function storageDelete(key) {
+  try {
+    await window.storage.delete(key, false);
+  } catch (e) {
+    // ignore - key may not exist
+  }
+}
+
 async function loadSyncUrl() {
-  syncUrl = localStorage.getItem('pb_drive-sync-url') || '';
+  syncUrl = (await storageGet('drive-sync-url')) || '';
   document.getElementById('syncUrlInput').value = syncUrl;
   updateSyncStatus();
 }
@@ -540,9 +570,7 @@ function updateSyncStatus() {
 
 async function saveSyncUrl() {
   syncUrl = document.getElementById('syncUrlInput').value.trim();
-  try {
-    localStorage.setItem('pb_drive-sync-url', syncUrl);
-  } catch (e) { console.error('sync url save failed', e); }
+  await storageSet('drive-sync-url', syncUrl);
   updateSyncStatus();
 }
 
@@ -562,11 +590,11 @@ function extractFolderId(url) {
 
 async function loadProjects() {
   try {
-    const idx = localStorage.getItem('pb_project-index');
-    const ids = idx ? JSON.parse(idx) : [];
+    const idxRaw = await storageGet('project-index');
+    const ids = idxRaw ? JSON.parse(idxRaw) : [];
     const loaded = [];
     for (const id of ids) {
-      const raw = localStorage.getItem('pb_project:' + id);
+      const raw = await storageGet('project:' + id);
       if (raw) {
         try { loaded.push(JSON.parse(raw)); } catch (e) { /* skip corrupt record */ }
       }
@@ -580,40 +608,36 @@ async function loadProjects() {
 }
 
 async function saveIndex() {
-  try {
-    localStorage.setItem('pb_project-index', JSON.stringify(projects.map(p => p.id)));
-  } catch (e) { console.error('index save failed', e); }
+  await storageSet('project-index', JSON.stringify(projects.map(p => p.id)));
 }
 
 async function saveProject(p) {
-  try {
-    localStorage.setItem('pb_project:' + p.id, JSON.stringify(p));
-  } catch (e) { console.error('project save failed', e); }
+  await storageSet('project:' + p.id, JSON.stringify(p));
 }
 
 async function deleteProjectStorage(id) {
-  try { localStorage.removeItem('pb_project:' + id); } catch (e) {}
+  await storageDelete('project:' + id);
 }
 
-function addProject() {
+async function addProject() {
   const input = document.getElementById('newProjectInput');
   const title = input.value.trim();
   if (!title) return;
   const p = { id: uid(), title, open: true, stages: blankStages(), publishedAt: null, cleanupDone: false };
   projects.unshift(p);
   input.value = '';
-  saveProject(p);
-  saveIndex();
   render();
+  await saveProject(p);
+  await saveIndex();
 }
 
-function deleteProject(id, ev) {
+async function deleteProject(id, ev) {
   ev.stopPropagation();
   if (!confirm('Delete this project? This cannot be undone.')) return;
   projects = projects.filter(p => p.id !== id);
-  deleteProjectStorage(id);
-  saveIndex();
   render();
+  await deleteProjectStorage(id);
+  await saveIndex();
 }
 
 function toggleOpen(id) {
@@ -622,7 +646,7 @@ function toggleOpen(id) {
   render();
 }
 
-function cycleStatus(pid, skey, ev) {
+async function cycleStatus(pid, skey, ev) {
   ev.stopPropagation();
   const p = projects.find(p => p.id === pid);
   const st = p.stages[skey];
@@ -635,24 +659,24 @@ function cycleStatus(pid, skey, ev) {
       p.publishedAt = null;
     }
   }
-  saveProject(p);
   render();
+  await saveProject(p);
 }
 
-function markCleaned(pid, ev) {
+async function markCleaned(pid, ev) {
   ev.stopPropagation();
   const p = projects.find(p => p.id === pid);
   p.cleanupDone = true;
-  saveProject(p);
   render();
+  await saveProject(p);
 }
 
 let debounceTimers = {};
 
-function updateField(pid, skey, field, value) {
+async function updateField(pid, skey, field, value) {
   const p = projects.find(p => p.id === pid);
   p.stages[skey][field] = value;
-  saveProject(p);
+  await saveProject(p);
   if (field === 'notes' && skey === 'title') {
     const timerKey = pid + ':' + skey;
     clearTimeout(debounceTimers[timerKey]);
@@ -690,7 +714,7 @@ async function syncTextStage(pid, skey) {
     st.uploadStatus = 'error';
     st.syncError = 'Could not reach Drive Sync URL (' + e.message + ')';
   }
-  saveProject(p);
+  await saveProject(p);
   render();
 }
 
@@ -707,12 +731,13 @@ function handleFile(pid, skey, fileInput, isImageStage) {
     // No Drive sync configured — fall back to local-only handling
     if (isImageStage && file.type.startsWith('image/') && file.size <= 3 * 1024 * 1024) {
       const reader = new FileReader();
-      reader.onload = () => { st.image = reader.result; st.fileName = file.name; saveProject(p); render(); };
+      reader.onload = async () => { st.image = reader.result; st.fileName = file.name; render(); await saveProject(p); };
       reader.readAsDataURL(file);
     } else {
       st.fileName = file.name;
       st.fileSize = (file.size / (1024 * 1024)).toFixed(1) + ' MB';
-      saveProject(p); render();
+      render();
+      saveProject(p);
     }
     return;
   }
@@ -721,7 +746,8 @@ function handleFile(pid, skey, fileInput, isImageStage) {
     st.uploadStatus = 'error';
     st.fileName = file.name;
     st.fileSize = (file.size / (1024 * 1024)).toFixed(1) + ' MB — too large to sync, add a Drive link manually';
-    saveProject(p); render();
+    render();
+    saveProject(p);
     return;
   }
 
@@ -769,8 +795,8 @@ function handleFile(pid, skey, fileInput, isImageStage) {
       st.uploadStatus = 'error';
       st.syncError = 'Could not reach Drive Sync URL (' + err.message + ')';
     }
-    saveProject(p);
     render();
+    await saveProject(p);
   };
   reader.readAsDataURL(file);
 }
@@ -930,8 +956,10 @@ document.getElementById('newProjectInput').addEventListener('keydown', e => {
   if (e.key === 'Enter') addProject();
 });
 
-loadProjects();
-loadSyncUrl();
+(async function init() {
+  await loadProjects();
+  await loadSyncUrl();
+})();
 </script>
 </body>
 </html>
