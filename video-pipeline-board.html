@@ -527,7 +527,7 @@ footer {
 
   <div class="sync-row">
     <label class="sync-label">Board Backup Folder</label>
-    <input id="backupFolderInput" type="text" placeholder="Optional: Drive folder link for the full board backup...">
+    <input id="backupFolderInput" type="text" placeholder="Optional: Drive folder link for the full board backup..." value="https://drive.google.com/drive/folders/1iT6Y3vNL7000iQBcybRSdumsW2x_F1P_">
     <button class="btn btn-ghost" onclick="saveBackupFolder()">Save</button>
     <span id="backupStatus" class="sync-status off"></span>
   </div>
@@ -663,8 +663,16 @@ async function saveSyncUrl() {
   updateSyncStatus();
 }
 
+const DEFAULT_BACKUP_FOLDER = 'https://drive.google.com/drive/folders/1iT6Y3vNL7000iQBcybRSdumsW2x_F1P_';
+
 async function loadBackupFolder() {
-  backupFolderLink = (await storageGet('backup-folder-link')) || '';
+  const stored = await storageGet('backup-folder-link');
+  if (stored !== null) {
+    backupFolderLink = stored;
+  } else {
+    backupFolderLink = DEFAULT_BACKUP_FOLDER;
+    await storageSet('backup-folder-link', backupFolderLink);
+  }
   document.getElementById('backupFolderInput').value = backupFolderLink;
   updateBackupStatus('idle');
 }
